@@ -67,11 +67,11 @@ ok "n8n owner: $ADMIN_EMAIL"
 
 # ------------------------------------------------------------------ Mattermost
 mm() { docker compose exec -T mattermost mmctl --local "$@"; }
-log "Configuring Mattermost (team acme, channels sales-alerts / ops-alerts / invoices)"
+log "Configuring Mattermost (team acme, channels sales-alerts / ops-alerts / invoices / support)"
 mm user create --email "$ADMIN_EMAIL" --username admin --password "$ADMIN_PASSWORD" --system-admin >/dev/null 2>&1 || true
 mm team create --name acme --display-name "Acme Inc" >/dev/null 2>&1 || true
 mm team users add acme admin >/dev/null 2>&1 || true
-for ch in sales-alerts:"Sales Alerts" ops-alerts:"Ops Alerts" invoices:"Invoices"; do
+for ch in sales-alerts:"Sales Alerts" ops-alerts:"Ops Alerts" invoices:"Invoices" support:"Support Escalations"; do
   mm channel create --team acme --name "${ch%%:*}" --display-name "${ch#*:}" >/dev/null 2>&1 || true
   mm channel users add "acme:${ch%%:*}" admin >/dev/null 2>&1 || true
 done

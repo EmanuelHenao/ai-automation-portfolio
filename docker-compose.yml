@@ -58,6 +58,9 @@ services:
       NOCODB_LEADS_TABLE_ID: ${NOCODB_LEADS_TABLE_ID}
       EXTRACTOR_URL: http://extractor:8000
       INVOICE_AMOUNT_TOLERANCE: ${INVOICE_AMOUNT_TOLERANCE:-0.05}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      RAG_MIN_SIMILARITY: ${RAG_MIN_SIMILARITY:-0.35}
+      RAG_TOP_K: ${RAG_TOP_K:-5}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./:/portfolio:ro

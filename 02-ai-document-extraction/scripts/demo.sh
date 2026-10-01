@@ -13,6 +13,7 @@ title() { printf '\n\033[1;36m━━ %s\033[0m\n' "$*"; }
 
 if [[ "${1:-}" == "--reset" ]]; then
   title "Resetting demo data"
+  ./scripts/clear-channel.sh invoices
   psql -qc "TRUNCATE invoices, invoice_items RESTART IDENTITY; DELETE FROM execution_log WHERE project = '02-document-extraction';"
   echo "done"
 fi

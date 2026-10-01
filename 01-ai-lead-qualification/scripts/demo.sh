@@ -13,6 +13,8 @@ title() { printf '\n\033[1;36m━━ %s\033[0m\n' "$*"; }
 
 if [[ "${1:-}" == "--reset" ]]; then
   title "Resetting demo data"
+  ./scripts/clear-channel.sh sales-alerts ops-alerts
+  curl -s -X DELETE http://localhost:8025/api/v1/messages -o /dev/null
   psql -qc "TRUNCATE leads RESTART IDENTITY; DELETE FROM execution_log WHERE project = '01-lead-qualification'; TRUNCATE automation_errors RESTART IDENTITY;"
   ids=$(curl -s "http://localhost:8080/api/v2/tables/$NOCODB_LEADS_TABLE_ID/records?fields=Id&limit=1000" \
     -H "xc-token: $NOCODB_API_TOKEN" | python3 -c "import sys,json; print(json.dumps([{'Id': r['Id']} for r in json.load(sys.stdin)['list']]))")

@@ -1,0 +1,447 @@
+{
+  "id": "kbIngestion00001",
+  "name": "03a · Knowledge Base Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Knowledge base ingestion\nOne help-center article per request. The article is split by section, each chunk is embedded with OpenAI\nand stored in PostgreSQL + pgvector. Re-sending an unchanged article costs nothing (content hash check);\na changed article replaces its old chunks in a single SQL statement, so search never sees half an update.",
+        "height": 700,
+        "width": 1960,
+        "color": 4
+      },
+      "id": "13b06b05-f970-5e01-a924-7fee14d5ff81",
+      "name": "Note: Ingest",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kb-ingest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "76a74e99-da37-58f2-b6b6-d2e3010e3665",
+      "name": "KB Ingest Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        340
+      ],
+      "webhookId": "4ca9782e-5414-5d60-886c-b49f5c56fc31"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validates the document and splits it into chunks by section (## headings).\n// Each chunk carries \"Title > Section\" so it still makes sense on its own when retrieved.\nconst req = $input.first().json;\nconst headers = req.headers || {};\nconst body = req.body || {};\nconst errors = [];\nlet status_code = 200;\nif (!$env.WEBHOOK_TOKEN || headers['x-webhook-token'] !== $env.WEBHOOK_TOKEN) {\n  status_code = 401;\n  errors.push('Missing or invalid X-Webhook-Token header');\n}\nconst doc = {\n  source: typeof body.source === 'string' ? body.source.trim() : '',\n  title: typeof body.title === 'string' ? body.title.trim() : '',\n  content: typeof body.content === 'string' ? body.content.replace(/\\r\\n/g, '\\n').trim() : '',\n};\nif (status_code === 200) {\n  if (!doc.source) errors.push('source is required (a stable id such as a file name or URL)');\n  if (!doc.title) errors.push('title is required');\n  if (doc.content.length < 50) errors.push('content must be at least 50 characters');\n  if (doc.content.length > 200000) errors.push('content exceeds 200,000 characters');\n  if (errors.length) status_code = 400;\n}\n\nconst MAX = 1500;\nconst chunks = [];\nif (!errors.length) {\n  const sections = [];\n  let current = { heading: 'Overview', lines: [] };\n  for (const line of doc.content.split('\\n')) {\n    if (/^#\\s/.test(line)) continue;                       // document title, already known\n    const h = line.match(/^#{2,3}\\s+(.*)/);\n    if (h) {\n      if (current.lines.join('').trim()) sections.push(current);\n      current = { heading: h[1].trim(), lines: [] };\n    } else current.lines.push(line);\n  }\n  if (current.lines.join('').trim()) sections.push(current);\n\n  for (const s of sections) {\n    // long sections are split on paragraph boundaries\n    let buf = '';\n    for (const para of s.lines.join('\\n').trim().split(/\\n{2,}/)) {\n      if (buf && (buf + '\\n\\n' + para).length > MAX) { chunks.push({ heading: s.heading, body: buf }); buf = para; }\n      else buf = buf ? buf + '\\n\\n' + para : para;\n    }\n    if (buf) chunks.push({ heading: s.heading, body: buf });\n  }\n}\n\nconst request_id = globalThis.crypto?.randomUUID?.() ??\n  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {\n    const r = (Math.random() * 16) | 0;\n    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);\n  });\n\nreturn [{\n  json: {\n    ok: errors.length === 0, status_code, errors, request_id, received_at_ms: Date.now(), doc,\n    chunks: chunks.map((c, i) => ({ chunk_index: i, heading: c.heading, content: `${doc.title} > ${c.heading}\\n\\n${c.body}` })),\n  },\n}];\n"
+      },
+      "id": "a37f265a-5718-5168-b14c-50417b46e5bf",
+      "name": "Validate & Chunk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8650c118-3e8c-5bd8-a30d-d916f09b9919",
+              "leftValue": "={{ $json.ok }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "73def28f-27d4-51cb-bb63-cba008b180e9",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'rejected', request_id: $json.request_id, errors: $json.errors }) }}",
+        "options": {
+          "responseCode": "={{ $json.status_code }}"
+        }
+      },
+      "id": "f6ef4659-48bf-5b32-9759-65295adbe7ce",
+      "name": "Respond Rejected",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        840,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT encode(sha256(convert_to($2::text, 'UTF8')), 'hex') AS incoming_sha,\n       (SELECT content_sha256 FROM kb_documents WHERE source = $1) AS stored_sha;",
+        "options": {
+          "queryReplacement": "={{ [ $json.doc.source, $json.doc.title + '\\n' + $json.doc.content ] }}"
+        }
+      },
+      "id": "89e738bc-6d35-54b9-a168-4166e50577dc",
+      "name": "Check Document Version",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        840,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgPortfolio00001",
+          "name": "Portfolio Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b04cd31-e714-51c9-b5ab-ff1370d5ce5e",
+              "leftValue": "={{ $json.incoming_sha !== $json.stored_sha }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8b9eb202-b938-5753-b097-d85859a9f99b",
+      "name": "Changed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'unchanged', source: $('Validate & Chunk').first().json.doc.source, message: 'Content identical to the indexed version; nothing to do' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "e7176e74-ffd7-5b63-8ccc-3ab46d2dc0f3",
+      "name": "Respond Unchanged",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1240,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small', input: $('Validate & Chunk').first().json.chunks.map(c => c.content) }) }}",
+        "options": {
+          "timeout": 60000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "c9a0caf3-2129-5cf4-b996-ff38d5c52549",
+      "name": "Embed Chunks (OpenAI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        340
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'failed', source: $('Validate & Chunk').first().json.doc.source, errors: ['Embedding service unavailable, the previous version stays indexed. Please retry.'] }) }}",
+        "options": {
+          "responseCode": 503
+        }
+      },
+      "id": "0e5c1341-4c1f-52c6-af2d-b526857342c9",
+      "name": "Respond Embedding Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1440,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pairs every chunk with its embedding, ready for a single SQL statement.\nconst v = $('Validate & Chunk').first().json;\nconst res = $input.first().json;\nconst vectors = (res.data || []).sort((a, b) => a.index - b.index).map((d) => d.embedding);\nif (vectors.length !== v.chunks.length) throw new Error(`Expected ${v.chunks.length} embeddings, got ${vectors.length}`);\nconst rows = v.chunks.map((c, i) => ({ ...c, embedding: JSON.stringify(vectors[i]) }));\nreturn [{ json: { rows: JSON.stringify(rows), chunk_count: rows.length, tokens: res.usage?.total_tokens ?? null,\n                  sha: $('Check Document Version').first().json.incoming_sha } }];\n"
+      },
+      "id": "ccddc4ff-d3f2-504d-bd07-cb6ef49b50c6",
+      "name": "Prepare Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH doc AS (\n  INSERT INTO kb_documents (source, title, content_sha256, chunk_count, updated_at)\n  VALUES ($1, $2, $3, $4, now())\n  ON CONFLICT (source) DO UPDATE\n    SET title = EXCLUDED.title, content_sha256 = EXCLUDED.content_sha256,\n        chunk_count = EXCLUDED.chunk_count, updated_at = now()\n  RETURNING id\n), removed AS (\n  DELETE FROM kb_chunks WHERE document_id = (SELECT id FROM doc) RETURNING 1\n), added AS (\n  INSERT INTO kb_chunks (document_id, chunk_index, heading, content, embedding)\n  SELECT doc.id, x.chunk_index, x.heading, x.content, x.embedding::vector\n  FROM doc, jsonb_to_recordset($5::jsonb) AS x(chunk_index int, heading text, content text, embedding text)\n  RETURNING 1\n)\nSELECT (SELECT id FROM doc) AS document_id,\n       (SELECT count(*) FROM removed) AS chunks_removed,\n       (SELECT count(*) FROM added) AS chunks_added;",
+        "options": {
+          "queryReplacement": "={{ [ $('Validate & Chunk').first().json.doc.source, $('Validate & Chunk').first().json.doc.title, $json.sha, $json.chunk_count, $json.rows ] }}"
+        }
+      },
+      "id": "093fe189-93f7-57eb-8ab5-9111a0cf1442",
+      "name": "Save Document + Chunks",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1640,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgPortfolio00001",
+          "name": "Portfolio Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: Number($json.chunks_removed) > 0 ? 'updated' : 'indexed', source: $('Validate & Chunk').first().json.doc.source, document_id: Number($json.document_id), chunks: Number($json.chunks_added), embedding_tokens: $('Prepare Rows').first().json.tokens }) }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "97c996fa-e4a1-57a9-ae23-21ad4980f24f",
+      "name": "Respond Indexed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1840,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO execution_log (request_id, project, workflow, idempotency_key, status, detail, latency_ms, llm_model, prompt_tokens)\nVALUES ($1::uuid, '03-support-rag', 'kb-ingest', $2, 'success', $3, $4, $5, NULLIF($6::text, '')::int);",
+        "options": {
+          "queryReplacement": "={{ [ $('Validate & Chunk').first().json.request_id, $('Validate & Chunk').first().json.doc.source, 'chunks=' + $json.chunks_added, Date.now() - $('Validate & Chunk').first().json.received_at_ms, $env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small', $('Prepare Rows').first().json.tokens ?? '' ] }}"
+        }
+      },
+      "id": "a8bddf95-dbf7-5d33-81c8-7e71c6e7a417",
+      "name": "Log Ingestion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2040,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgPortfolio00001",
+          "name": "Portfolio Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "KB Ingest Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate & Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Chunk": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Check Document Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Document Version": {
+      "main": [
+        [
+          {
+            "node": "Changed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Changed?": {
+      "main": [
+        [
+          {
+            "node": "Embed Chunks (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unchanged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed Chunks (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Embedding Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rows": {
+      "main": [
+        [
+          {
+            "node": "Save Document + Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Document + Chunks": {
+      "main": [
+        [
+          {
+            "node": "Respond Indexed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Indexed": {
+      "main": [
+        [
+          {
+            "node": "Log Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "errHandler000001",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "name": "portfolio"
+    },
+    {
+      "name": "rag"
+    }
+  ]
+}
