@@ -56,6 +56,8 @@ services:
       NOCODB_URL: http://nocodb:8080
       NOCODB_API_TOKEN: ${NOCODB_API_TOKEN}
       NOCODB_LEADS_TABLE_ID: ${NOCODB_LEADS_TABLE_ID}
+      EXTRACTOR_URL: http://extractor:8000
+      INVOICE_AMOUNT_TOLERANCE: ${INVOICE_AMOUNT_TOLERANCE:-0.05}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./:/portfolio:ro
@@ -100,6 +102,17 @@ services:
       - nocodb_data:/usr/app/data
     ports:
       - "8080:8080"
+
+  extractor:
+    # Project 02: PDF/image text extraction (pdfplumber + Tesseract OCR), FastAPI
+    build: ./02-ai-document-extraction/extractor
+    restart: unless-stopped
+    environment:
+      MAX_FILE_MB: 10
+      MAX_PAGES: 10
+      OCR_LANG: eng+spa
+    ports:
+      - "127.0.0.1:8000:8000" # only for local testing; n8n uses http://extractor:8000
 
   mailpit:
     image: axllent/mailpit:latest

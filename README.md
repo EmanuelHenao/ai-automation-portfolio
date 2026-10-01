@@ -6,7 +6,7 @@ Each project is a small, working MVP that solves one business problem end to end
 | # | Project | In 30 seconds | Stack |
 |---|---|---|---|
 | 01 | [AI Lead Qualification & CRM Automation](01-ai-lead-qualification/) | A form lead is validated, scored by AI, stored, added to the CRM and the sales team is alerted in seconds. | n8n · OpenAI · PostgreSQL · NocoDB · Mattermost/Slack · Email |
-| 02 | AI Document Processing & Data Extraction *(in progress)* | An invoice is uploaded, OCR'd, extracted with AI, validated and stored; anything suspicious goes to human review. | n8n · Python/FastAPI · OCR · OpenAI · PostgreSQL |
+| 02 | [AI Document Processing & Data Extraction](02-ai-document-extraction/) | A PDF or scanned invoice is read (OCR), extracted with AI, math-checked and stored; wrong totals and duplicate payments go to human review. | n8n · Python/FastAPI · Tesseract OCR · OpenAI · PostgreSQL |
 | 03 | AI Customer Support & Knowledge Base *(in progress)* | Questions are answered only from the company's own docs, with sources; unknown answers escalate to a human. | n8n · OpenAI · RAG · pgvector · PostgreSQL |
 
 ## Engineering standards in every project
@@ -31,6 +31,7 @@ cp .env.example .env        # add your OPENAI_API_KEY
 | NocoDB | http://localhost:8080 | Lightweight CRM (Airtable-like) |
 | Mattermost | http://localhost:8065 | Team alerts (Slack-compatible webhooks) |
 | Mailpit | http://localhost:8025 | Captures outgoing email |
+| Extractor | http://localhost:8000/docs | Project 02 OCR microservice (FastAPI) |
 
 All services are open source. In a client project, Mattermost is swapped for Slack/Teams and NocoDB for HubSpot/Pipedrive/Airtable without changing the workflow logic.
 
@@ -41,6 +42,7 @@ shared/workflows/        global error handler used by every workflow
 infra/postgres/init/     database schemas
 scripts/                 bootstrap and workflow import
 01-…/ 02-…/ 03-…/        one folder per project: workflows, samples, demo script, docs, screenshots
+02-…/extractor/          Python/FastAPI OCR service with unit tests
 ```
 
 ---

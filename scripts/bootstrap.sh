@@ -47,6 +47,15 @@ docker compose up -d --quiet-pull
 wait_for n8n http://localhost:5678/healthz
 wait_for Mattermost http://localhost:8065/api/v4/system/ping
 wait_for NocoDB http://localhost:8080/api/v1/health
+wait_for Extractor http://localhost:8000/health
+
+# ------------------------------------------------------------------ database schemas
+# Init scripts only run on an empty volume; re-apply them (all idempotent) so new projects get their tables
+log "Applying database schemas"
+for sql in infra/postgres/init/[1-9]*.sql; do
+  docker compose exec -T postgres psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$sql" >/dev/null
+done
+ok "Schemas up to date"
 
 # ------------------------------------------------------------------ n8n owner
 if curl -s http://localhost:5678/rest/settings | json "d['data']['userManagement']['showSetupOnFirstLoad']" | grep -q True; then
@@ -58,11 +67,11 @@ ok "n8n owner: $ADMIN_EMAIL"
 
 # ------------------------------------------------------------------ Mattermost
 mm() { docker compose exec -T mattermost mmctl --local "$@"; }
-log "Configuring Mattermost (team acme, channels sales-alerts / ops-alerts)"
+log "Configuring Mattermost (team acme, channels sales-alerts / ops-alerts / invoices)"
 mm user create --email "$ADMIN_EMAIL" --username admin --password "$ADMIN_PASSWORD" --system-admin >/dev/null 2>&1 || true
 mm team create --name acme --display-name "Acme Inc" >/dev/null 2>&1 || true
 mm team users add acme admin >/dev/null 2>&1 || true
-for ch in sales-alerts:"Sales Alerts" ops-alerts:"Ops Alerts"; do
+for ch in sales-alerts:"Sales Alerts" ops-alerts:"Ops Alerts" invoices:"Invoices"; do
   mm channel create --team acme --name "${ch%%:*}" --display-name "${ch#*:}" >/dev/null 2>&1 || true
   mm channel users add "acme:${ch%%:*}" admin >/dev/null 2>&1 || true
 done
