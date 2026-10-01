@@ -1,0 +1,17 @@
+{
+  "table_name": "leads",
+  "title": "Leads",
+  "columns": [
+    { "column_name": "name", "title": "Name", "uidt": "SingleLineText", "pv": true },
+    { "column_name": "email", "title": "Email", "uidt": "Email" },
+    { "column_name": "company", "title": "Company", "uidt": "SingleLineText" },
+    { "column_name": "score", "title": "Score", "uidt": "Number" },
+    { "column_name": "stage", "title": "Stage", "uidt": "SingleSelect", "dtxp": "'Contact now','Qualify','Nurture','Manual review'" },
+    { "column_name": "intent", "title": "Intent", "uidt": "LongText" },
+    { "column_name": "budget", "title": "Budget", "uidt": "SingleSelect", "dtxp": "'high','medium','low','unknown'" },
+    { "column_name": "urgency", "title": "Urgency", "uidt": "SingleSelect", "dtxp": "'high','medium','low','unknown'" },
+    { "column_name": "next_action", "title": "Next action", "uidt": "LongText" },
+    { "column_name": "source", "title": "Source", "uidt": "SingleLineText" },
+    { "column_name": "lead_id", "title": "Lead ID", "uidt": "Number" }
+  ]
+}

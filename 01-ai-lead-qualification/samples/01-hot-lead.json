@@ -1,0 +1,10 @@
+{
+  "full_name": "Laura Mendez",
+  "email": "laura.mendez@brightdental.example",
+  "company": "Bright Dental Group",
+  "website": "https://brightdental.example",
+  "phone": "+1 512 555 0142",
+  "budget": "$10k - $15k",
+  "source": "website_contact_form",
+  "message": "We run 4 dental clinics and our front desk spends ~3 hours a day confirming appointments by phone and copying patient forms into our practice management system. I'm the operations director and we want an automation that sends WhatsApp reminders and syncs intake forms automatically. We'd like to start next month."
+}

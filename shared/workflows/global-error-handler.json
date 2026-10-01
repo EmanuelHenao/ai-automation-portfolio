@@ -1,0 +1,121 @@
+{
+  "id": "errHandler000001",
+  "name": "00 · Global Error Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Global error handler\nAny workflow that fails (after its own retries) lands here.\nThe error is stored in `automation_errors` and the ops channel is alerted\nwith a direct link to the failed execution.",
+        "height": 420,
+        "width": 760,
+        "color": 3
+      },
+      "id": "a2c08baf-0b16-5785-848a-2f58f208a798",
+      "name": "Note: Error",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "54bc7986-3685-59ea-a99d-5af9ef7e9dc3",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO automation_errors (workflow_id, workflow_name, execution_id, failed_node, error_message, execution_url)\nVALUES ($1, $2, $3, $4, $5, $6)\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [ $json.workflow.id, $json.workflow.name, $json.execution.id ?? '', $json.execution.lastNodeExecuted ?? '', ($json.execution.error?.message ?? 'unknown').slice(0, 2000), $json.execution.url ?? '' ] }}"
+        }
+      },
+      "id": "70aab2d1-1e06-5c5b-b852-35bc6061ee75",
+      "name": "Store Error (PostgreSQL)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        260
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgPortfolio00001",
+          "name": "Portfolio Postgres"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: 'ops-alerts', username: 'Automation Monitor', text: ':rotating_light: **Automation failed:** ' + $('On Workflow Error').first().json.workflow.name + '\\n' + '**Node:** ' + ($('On Workflow Error').first().json.execution.lastNodeExecuted ?? 'n/a') + '\\n' + '**Error:** ' + ($('On Workflow Error').first().json.execution.error?.message ?? 'unknown') + '\\n' + ($('On Workflow Error').first().json.execution.url ? '[Open execution](' + $('On Workflow Error').first().json.execution.url + ')' : '') }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "a9c80553-915e-5ac2-aafd-52fb1a7543e4",
+      "name": "Alert Ops (Mattermost)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        260
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Store Error (PostgreSQL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Error (PostgreSQL)": {
+      "main": [
+        [
+          {
+            "node": "Alert Ops (Mattermost)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "name": "portfolio"
+    },
+    {
+      "name": "ops"
+    }
+  ]
+}

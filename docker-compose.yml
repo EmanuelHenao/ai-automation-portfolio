@@ -1,0 +1,116 @@
+# AI Automation Portfolio — local stack
+# Core services: n8n, PostgreSQL (with pgvector), Mattermost (team notifications),
+# NocoDB (lightweight CRM) and Mailpit (email catcher). All open source.
+# Usage:  cp .env.example .env  &&  docker compose up -d
+
+name: ai-automation-portfolio
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION:-2.41.5}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # n8n stores its own data in a separate database
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: ${TZ:-America/Bogota}
+      TZ: ${TZ:-America/Bogota}
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      # Workflows read configuration from environment variables ($env.*)
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      WEBHOOK_TOKEN: ${WEBHOOK_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      NOTIFY_WEBHOOK_URL: ${NOTIFY_WEBHOOK_URL}
+      NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO}
+      HOT_LEAD_THRESHOLD: ${HOT_LEAD_THRESHOLD:-75}
+      WARM_LEAD_THRESHOLD: ${WARM_LEAD_THRESHOLD:-45}
+      NOCODB_URL: http://nocodb:8080
+      NOCODB_API_TOKEN: ${NOCODB_API_TOKEN}
+      NOCODB_LEADS_TABLE_ID: ${NOCODB_LEADS_TABLE_ID}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./:/portfolio:ro
+    ports:
+      - "5678:5678"
+
+  mattermost:
+    image: mattermost/mattermost-team-edition:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/mattermost?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_URL:-http://localhost:8065}
+      MM_SERVICESETTINGS_ENABLEINCOMINGWEBHOOKS: "true"
+      MM_SERVICESETTINGS_ENABLEPOSTUSERNAMEOVERRIDE: "true"
+      MM_SERVICESETTINGS_ENABLEPOSTICONOVERRIDE: "true"
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: "n8n"
+      # Local mode lets scripts/bootstrap.sh create the team, channels and webhooks with mmctl
+      MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+      TZ: ${TZ:-America/Bogota}
+    volumes:
+      - mattermost_data:/mattermost/data
+      - mattermost_config:/mattermost/config
+    ports:
+      - "8065:8065"
+
+  nocodb:
+    # Open-source Airtable alternative used as the lightweight sales CRM (project 01)
+    image: nocodb/nocodb:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NC_DB: pg://postgres:5432?u=${POSTGRES_USER}&p=${POSTGRES_PASSWORD}&d=nocodb
+      NC_AUTH_JWT_SECRET: ${N8N_ENCRYPTION_KEY}
+      NC_DISABLE_TELE: "true"
+    volumes:
+      - nocodb_data:/usr/app/data
+    ports:
+      - "8080:8080"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # SMTP (n8n uses mailpit:1025)
+
+volumes:
+  postgres_data:
+  n8n_data:
+  mattermost_data:
+  mattermost_config:
+  nocodb_data:

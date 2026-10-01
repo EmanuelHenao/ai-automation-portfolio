@@ -1,0 +1,9 @@
+.env
+*.local.*
+__pycache__/
+.venv/
+node_modules/
+.DS_Store
+
+# Notas personales (no se publican)
+docs/privado/
