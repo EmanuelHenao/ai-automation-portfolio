@@ -53,7 +53,7 @@ wait_for Extractor http://localhost:8000/health
 # Init scripts only run on an empty volume; re-apply them (all idempotent) so new projects get their tables
 log "Applying database schemas"
 for sql in infra/postgres/init/[1-9]*.sql; do
-  docker compose exec -T postgres psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$sql" >/dev/null
+  docker compose exec -T -e PGOPTIONS="--client-min-messages=warning" postgres psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$sql" >/dev/null
 done
 ok "Schemas up to date"
 
@@ -143,5 +143,6 @@ $(ok "Stack ready")
   Mattermost  http://localhost:8065   (admin / same password) → team "Acme Inc"
   NocoDB      http://localhost:8080   ($ADMIN_EMAIL) → base "Sales CRM"
   Mailpit     http://localhost:8025
+  Extractor   http://localhost:8000/docs   (project 02 OCR API)
   PostgreSQL  localhost:${POSTGRES_HOST_PORT:-5433}  (db $POSTGRES_DB)
 EOF
