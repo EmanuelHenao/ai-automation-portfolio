@@ -6,26 +6,14 @@ AI Support Assistant with RAG: Answers Only From Your Docs (n8n + OpenAI)
 ## Your role
 AI Automation Developer
 
-## Project description
+## Project description (max 600 chars)
+Problem: support teams answer the same questions daily, and generic chatbots invent prices, policies and refunds.
 
-*Portfolio project built around a common real-world scenario; fully working and documented on GitHub.*
+Solution: a RAG assistant (n8n, OpenAI, pgvector) that answers only from the help center, in the customer's language, citing sources. Off-topic or low-confidence questions, and refund, billing or account requests, go to a human with the reason and closest article.
 
-**Problem:** Support teams answer the same questions every day even though the answers already live in their help center. Generic AI chatbots aren't a safe fix: they invent prices, policies and features, and can promise refunds nobody approved.
+Measured: 12/12 correct answer-or-escalate decisions on an eval set (including a prompt-injection attempt), ~2 s per answer.
 
-**Solution:** I built a retrieval-augmented (RAG) support assistant with n8n, OpenAI and PostgreSQL + pgvector:
-
-- The help center is split into sections, embedded and indexed; only new or changed articles are re-processed
-- Each question is matched with the most relevant passages, and the AI answers **only** from them, in the customer's language, citing its sources
-- If nothing relevant is found, the answer isn't backed by a cited passage, confidence is low, or the customer asks for a refund, a billing correction or an account change, the question goes to a human with the reason and the closest article
-- Every question is stored with its outcome and sources, which shows exactly where the help center has gaps
-
-**Measured, not assumed:** an automatic evaluation set of 12 questions (including off-topic, unsupported features, a double-charge refund request and a prompt-injection attempt) scores 12/12 on answer-or-escalate decisions and 8/8 on citing the right article, at about 2 seconds per answer.
-
-**Built for reliability:** secured endpoints, input validation, four independent layers against made-up answers, polite fallback if the AI service is down, atomic re-indexing, full logging of latency and AI cost, and alerts to the team channel.
-
-**Result:** Customers get instant, accurate answers to common questions, the team only handles what really needs a person — with context — and the business keeps control over what the AI is allowed to say.
-
-Works with Notion, Confluence, Zendesk or Intercom help centers, Google Drive or websites, and can answer through a chat widget, WhatsApp, email or Slack.
+Result: instant, accurate answers; the team only handles what needs a person.
 
 ## Skills / deliverables (max 5)
 1. Retrieval Augmented Generation

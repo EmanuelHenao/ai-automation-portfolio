@@ -6,24 +6,14 @@ AI Lead Qualification & CRM Automation with n8n and OpenAI
 ## Your role
 AI Automation Developer
 
-## Project description
+## Project description (max 600 chars)
+Problem: sales teams read every inbound lead by hand, spam mixes with real opportunities, and hot leads wait hours for a reply.
 
-*Portfolio project built around a common real-world scenario; fully working and documented on GitHub.*
+Solution: an n8n pipeline that validates each form submission, blocks duplicates and has OpenAI score it (0-100, intent, budget, urgency) against the ideal customer profile. Business rules route it: hot → instant chat + email alert and CRM "Contact now"; warm/cold → CRM stage; spam filtered; uncertain → human review.
 
-**Problem:** Service businesses receive dozens of inbound leads per week through their website forms. The sales team reads every message manually, spam and unqualified requests are mixed with real opportunities, and hot leads sometimes wait a day for a reply.
+Reliable: retries, AI-down fallback, error alerts, cost log.
 
-**Solution:** I built an automated lead qualification pipeline in n8n. Every form submission is validated, checked for duplicates and analyzed by an AI model against the company's ideal customer profile. The AI returns a structured score (0-100), intent, budget signal and urgency, and clear business rules decide what happens next:
-
-- Hot leads → instant chat alert + email to sales + CRM record marked "Contact now"
-- Warm and cold leads → CRM with the right stage for follow-up or nurturing
-- Spam → filtered out automatically
-- Anything uncertain → routed to a human for review
-
-**Built for reliability:** token-secured webhook, input validation, duplicate protection, strict JSON output from the AI, automatic retries, a fallback that never loses a lead if the AI is down, central error logging with alerts, and a full execution log with response time and AI cost per lead.
-
-**Result:** Hot leads reach a salesperson in seconds instead of hours, the CRM stays up to date without manual data entry, and the team only spends time on leads worth talking to.
-
-The workflow can connect to any form (Webflow, WordPress, Typeform, Facebook Lead Ads) and any CRM or chat (HubSpot, Pipedrive, Airtable, Slack, Teams).
+Result: hot leads reach sales in seconds, with zero manual CRM entry.
 
 ## Skills / deliverables (max 5)
 1. n8n
