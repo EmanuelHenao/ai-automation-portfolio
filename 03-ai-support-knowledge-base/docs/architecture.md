@@ -10,7 +10,9 @@ flowchart LR
       EM --> DB[(PostgreSQL + pgvector<br/>replace chunks atomically)]
     end
 
-    Q[Customer question<br/>chat · email · form] -->|POST /support-ask| VQ{Validate}
+    W[Web chat<br/>localhost:8088] -->|POST /api/ask| P[nginx proxy<br/>adds token · rate limit]
+    P -->|POST /support-ask| VQ{Validate}
+    Q[Other channels<br/>email · form · API] -->|POST /support-ask| VQ
     VQ -->|invalid| R1[[400 / 401]]
     VQ --> E[Embed question]
     E --> S[Vector search<br/>top 5 · cosine]
@@ -40,6 +42,15 @@ The model is never the only safety net. Four independent layers decide whether a
 | Grounded prompt | `Build Grounded Prompt` | The LLM receives numbered passages and must answer only from them, cite them, and say so when it can't answer. |
 | Structured output | `Generate Answer (OpenAI)` | Strict JSON schema: `answerable`, `needs_human`, `answer`, `cited_passages`, `confidence`. |
 | Guardrails in code | `Apply Guardrails` | Escalates when not answerable, when no valid passage is cited, when confidence is low, or when the customer asks for an account/money action (refunds, disputes, deletions, security incidents). |
+
+## Web chat
+
+`chat/index.html` is a single static page (no build step, no external dependencies) served by nginx (`chat/nginx.conf.template`, service `support-chat` in `docker-compose.yml`).
+
+- **Token stays on the server:** the page posts to `/api/ask`; nginx forwards it to the `support-ask` webhook and adds the `X-Webhook-Token` header. The browser never sees the token.
+- **Abuse limits:** only `POST` on `/api/ask`, 8 KB max body, 20 questions per minute per IP (`429` above that).
+- **Cited sources:** each source chip opens the exact section of the article the answer used. nginx serves `knowledge-base/` read-only at `/kb/`, and the page cuts out the section with the same `##`/`###` rule the ingestion workflow uses.
+- **Escalations** show the ticket number; the internal escalation reason is only sent to the team channel, never to the customer.
 
 ## Ingestion details
 

@@ -2,7 +2,7 @@
 
 > A customer asks a question. The assistant searches the company's own help center, answers only from it — with sources — and hands the conversation to a human when it doesn't know or when money or account changes are involved. About 2 seconds per answer.
 
-**Stack:** n8n · OpenAI (embeddings + GPT) · RAG · PostgreSQL + pgvector · REST APIs · Docker · Mattermost (Slack-compatible)
+**Stack:** n8n · OpenAI (embeddings + GPT) · RAG · PostgreSQL + pgvector · REST APIs · Docker · nginx (web chat) · Mattermost (Slack-compatible)
 
 ![Workflow](screenshots/workflow.png)
 
@@ -109,7 +109,7 @@ curl -X POST http://localhost:5678/webhook/kb-ingest -H "X-Webhook-Token: $WEBHO
 ## Adapting it for a client
 
 - **Knowledge source:** Notion, Confluence, Zendesk/Intercom help center, Google Drive or a website — anything that can be turned into text and sent to `/kb-ingest`, on a schedule or on change.
-- **Channels:** website chat widget, WhatsApp, email auto-replies, Slack, or draft replies inside the helpdesk for an agent to approve.
+- **Channels:** the included web chat (`chat/`) embedded in the client's site, WhatsApp, email auto-replies, Slack, or draft replies inside the helpdesk for an agent to approve.
 - **Escalation:** create a ticket in Zendesk, Freshdesk, HubSpot or Jira instead of (or in addition to) the chat alert.
 - **Scale:** pgvector with HNSW handles hundreds of thousands of chunks; swap in Pinecone, Qdrant or Weaviate behind the same two nodes if needed.
 
@@ -119,6 +119,6 @@ curl -X POST http://localhost:5678/webhook/kb-ingest -H "X-Webhook-Token: $WEBHO
 |---|---|
 | What business problem does it solve? | Repetitive support questions take agent time, and generic AI bots invent answers. |
 | What does it automate? | Indexing the help center, answering questions with sources, and routing everything else to a human with context. |
-| Which tools does it integrate? | n8n, OpenAI embeddings and GPT, PostgreSQL + pgvector, Mattermost/Slack, any text knowledge source. |
+| Which tools does it integrate? | n8n, OpenAI embeddings and GPT, PostgreSQL + pgvector, a web chat (nginx), Mattermost/Slack, any text knowledge source. |
 | What happens if something fails? | No relevant docs, ungrounded or low-confidence answers and account requests are escalated; AI outages return a polite holding message; failed re-indexing keeps the previous version. |
 | What does the client get? | Instant, accurate answers for the common questions, fewer tickets for the team, and a measurable, auditable assistant that knows when not to answer. |

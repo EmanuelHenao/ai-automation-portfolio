@@ -9,9 +9,9 @@ AI Automation Developer
 ## Project description (max 600 chars)
 Problem: support teams answer the same questions daily, and generic chatbots invent prices, policies and refunds.
 
-Solution: a RAG assistant (n8n, OpenAI, pgvector) that answers only from the help center, in the customer's language, citing sources. Off-topic or low-confidence questions, and refund, billing or account requests, go to a human with the reason and closest article.
+Solution: a RAG assistant with a web chat (n8n, OpenAI, pgvector) that answers only from the help center, in the customer's language, citing sources. Off-topic or low-confidence questions, and refund, billing or account requests, go to a human with the reason and closest article.
 
-Measured: 12/12 correct answer-or-escalate decisions on an eval set (including a prompt-injection attempt), ~2 s per answer.
+Measured: 12/12 correct answer-or-escalate decisions on an eval set (incl. a prompt-injection attempt), ~2 s per answer.
 
 Result: instant, accurate answers; the team only handles what needs a person.
 
@@ -38,4 +38,4 @@ Result: instant, accurate answers; the team only handles what needs a person.
 
 ## Optional links
 - GitHub: `https://github.com/EmanuelHenao/ai-automation-portfolio/tree/main/03-ai-support-knowledge-base`
-- Demo video (Loom, 90 s): pricing question → Spanish question → refund request escalated → evaluation run
+- Demo video (Loom, 90 s): in the web chat, pricing question → open the cited article → Spanish question → refund request escalated → evaluation run

@@ -7,7 +7,7 @@ Each project is a small, working MVP that solves one business problem end to end
 |---|---|---|---|
 | 01 | [AI Lead Qualification & CRM Automation](01-ai-lead-qualification/) | A form lead is validated, scored by AI, stored, added to the CRM and the sales team is alerted in seconds. | n8n · OpenAI · PostgreSQL · NocoDB · Mattermost/Slack · Email |
 | 02 | [AI Document Processing & Data Extraction](02-ai-document-extraction/) | A PDF or scanned invoice is read (OCR), extracted with AI, math-checked and stored; wrong totals and duplicate payments go to human review. | n8n · Python/FastAPI · Tesseract OCR · OpenAI · PostgreSQL |
-| 03 | [AI Customer Support & Knowledge Base (RAG)](03-ai-support-knowledge-base/) | Questions are answered only from the company's help center, with sources; anything unknown or risky escalates to a human. 12/12 on its evaluation set. | n8n · OpenAI · RAG · pgvector · PostgreSQL |
+| 03 | [AI Customer Support & Knowledge Base (RAG)](03-ai-support-knowledge-base/) | Customers ask in a web chat; answers come only from the company's help center, with sources; anything unknown or risky escalates to a human. 12/12 on its evaluation set. | n8n · OpenAI · RAG · pgvector · PostgreSQL · nginx |
 
 ## Engineering standards in every project
 
