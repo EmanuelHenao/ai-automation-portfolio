@@ -22,13 +22,19 @@ Result: instant, accurate answers; the team only handles what needs a person.
 4. OpenAI API
 5. PostgreSQL
 
-## Images to upload (in this order)
-1. `screenshots/cover.png` — cover with the one-line pitch and the stack
-2. `screenshots/chat.png` — real answers with sources, and an escalation
-3. `screenshots/workflow.png` — n8n support workflow with the 4 colored sections
-4. `screenshots/eval.png` — evaluation results (12/12)
-5. `screenshots/architecture.png` — architecture diagram
-6. `screenshots/support-escalations.png` — extra: escalations in the team channel
+## Images to upload (in this order, with caption)
+1. `screenshots/cover.png`
+   Caption: AI support assistant (RAG) that answers only from your help center: n8n, OpenAI and PostgreSQL + pgvector.
+2. `screenshots/chat.png`
+   Caption: Real answers with cited sources, in English and Spanish; a refund request is escalated to a human.
+3. `screenshots/workflow.png`
+   Caption: The n8n support workflow: validation, semantic search, grounded AI answer, and code guardrails that decide answer or escalate.
+4. `screenshots/eval.png`
+   Caption: Automatic evaluation: 12/12 correct answer-or-escalate decisions, including off-topic questions and a prompt-injection attempt.
+5. `screenshots/architecture.png`
+   Caption: Architecture: help center ingestion into pgvector, plus the question → search → answer or escalate flow.
+6. `screenshots/support-escalations.png`
+   Caption: Escalations in the team channel with the customer's question, the reason and the closest article.
 
 ## Optional links
 - GitHub: `https://github.com/EmanuelHenao/ai-automation-portfolio/tree/main/03-ai-support-knowledge-base`

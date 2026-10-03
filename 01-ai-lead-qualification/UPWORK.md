@@ -22,13 +22,23 @@ Result: hot leads reach sales in seconds, with zero manual CRM entry.
 4. API Integration
 5. PostgreSQL
 
-## Images to upload (in this order)
-1. `screenshots/cover.png` — cover with the one-line pitch and the stack
-2. `screenshots/workflow.png` — full n8n workflow with the 4 colored sections
-3. `screenshots/architecture.png` — architecture diagram
-4. `screenshots/sales-alert.png` — hot lead alert with AI reasoning in the team chat
-5. `screenshots/crm.png` — CRM with leads in different stages
-6. `screenshots/email.png` / `screenshots/ops-alert.png` / `screenshots/executions.png` — extras (email to sales, failure alert, execution history)
+## Images to upload (in this order, with caption)
+1. `screenshots/cover.png`
+   Caption: AI lead qualification pipeline built with n8n, OpenAI, PostgreSQL and a CRM.
+2. `screenshots/workflow.png`
+   Caption: The n8n workflow: intake and validation, duplicate check, AI scoring, and routing by business rules.
+3. `screenshots/architecture.png`
+   Caption: Architecture: form → n8n → OpenAI → PostgreSQL, CRM, team chat and email, with central error handling.
+4. `screenshots/sales-alert.png`
+   Caption: Hot lead alert in the team chat with score, budget, urgency, the AI's reasoning and a suggested next step.
+5. `screenshots/crm.png`
+   Caption: Leads land in the CRM automatically with their score and the right stage: Contact now, Qualify or Nurture.
+6. `screenshots/email.png`
+   Caption: Email sent to the sales team for every hot lead.
+7. `screenshots/ops-alert.png`
+   Caption: Failure alert: when a step fails, the team gets the node, the error and a link to the failed execution.
+8. `screenshots/executions.png`
+   Caption: n8n execution history: each lead processed in about 2 seconds; the failed run is caught by the global error handler.
 
 ## Optional links
 - GitHub: `https://github.com/EmanuelHenao/ai-automation-portfolio/tree/main/01-ai-lead-qualification`

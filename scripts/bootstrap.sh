@@ -144,5 +144,6 @@ $(ok "Stack ready")
   NocoDB      http://localhost:8080   ($ADMIN_EMAIL) → base "Sales CRM"
   Mailpit     http://localhost:8025
   Extractor   http://localhost:8000/docs   (project 02 OCR API)
+  Chat        http://localhost:8088        (project 03 support chat)
   PostgreSQL  localhost:${POSTGRES_HOST_PORT:-5433}  (db $POSTGRES_DB)
 EOF

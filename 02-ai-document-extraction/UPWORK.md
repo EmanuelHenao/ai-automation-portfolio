@@ -22,12 +22,17 @@ Result: invoices captured in ~3 seconds; people only review real problems.
 4. Python
 5. OCR
 
-## Images to upload (in this order)
-1. `screenshots/cover.png` — cover with the one-line pitch and the stack
-2. `screenshots/result.png` — scanned invoice next to the extracted JSON
-3. `screenshots/workflow.png` — n8n workflow with the 4 colored sections
-4. `screenshots/architecture.png` — architecture diagram
-5. `screenshots/finance-alerts.png` — review alerts with reasons + processed invoices
+## Images to upload (in this order, with caption)
+1. `screenshots/cover.png`
+   Caption: AI invoice extraction with OCR: n8n, Python (FastAPI), OpenAI and PostgreSQL.
+2. `screenshots/result.png`
+   Caption: A noisy, rotated scan turned into validated, structured data in about 3 seconds, with no human input.
+3. `screenshots/workflow.png`
+   Caption: The n8n workflow: intake and duplicate check, OCR/text reading, AI extraction, and math validation.
+4. `screenshots/architecture.png`
+   Caption: Architecture: upload → n8n → Python OCR service → OpenAI → validation in code → PostgreSQL and finance alerts.
+5. `screenshots/finance-alerts.png`
+   Caption: Finance channel: clean invoices go straight through; wrong totals, duplicate invoice numbers and non-invoices go to review with the reason.
 
 ## Optional links
 - GitHub: `https://github.com/EmanuelHenao/ai-automation-portfolio/tree/main/02-ai-document-extraction`

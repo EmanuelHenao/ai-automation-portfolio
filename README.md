@@ -32,6 +32,7 @@ cp .env.example .env        # add your OPENAI_API_KEY
 | Mattermost | http://localhost:8065 | Team alerts (Slack-compatible webhooks) |
 | Mailpit | http://localhost:8025 | Captures outgoing email |
 | Extractor | http://localhost:8000/docs | Project 02 OCR microservice (FastAPI) |
+| Support chat | http://localhost:8088 | Project 03 web chat (nginx proxy to the n8n webhook) |
 
 All services are open source. In a client project, Mattermost is swapped for Slack/Teams and NocoDB for HubSpot/Pipedrive/Airtable without changing the workflow logic.
 
@@ -43,6 +44,7 @@ infra/postgres/init/     database schemas
 scripts/                 bootstrap, workflow import, demo helpers
 01-…/ 02-…/ 03-…/        one folder per project: workflows, samples, demo script, docs, screenshots
 02-…/extractor/          Python/FastAPI OCR service with unit tests
+03-…/chat/               support chat web UI (static page + nginx proxy)
 ```
 
 ---

@@ -117,6 +117,22 @@ services:
     ports:
       - "127.0.0.1:8000:8000" # only for local testing; n8n uses http://extractor:8000
 
+  support-chat:
+    # Project 03: web chat UI. nginx serves the page and proxies questions to n8n,
+    # adding the webhook token server side so it never reaches the browser.
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    depends_on:
+      - n8n
+    environment:
+      WEBHOOK_TOKEN: ${WEBHOOK_TOKEN}
+    volumes:
+      - ./03-ai-support-knowledge-base/chat/index.html:/usr/share/nginx/html/index.html:ro
+      - ./03-ai-support-knowledge-base/chat/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./03-ai-support-knowledge-base/knowledge-base:/usr/share/nginx/kb:ro
+    ports:
+      - "8088:80"
+
   mailpit:
     image: axllent/mailpit:latest
     restart: unless-stopped

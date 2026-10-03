@@ -68,7 +68,11 @@ cp .env.example .env              # add your OPENAI_API_KEY
 ./03-ai-support-knowledge-base/scripts/demo.sh --reset   # indexes the help center and runs the evaluation
 ```
 
-Ask a question:
+Open the chat at **http://localhost:8088** and ask anything. Each answer shows the help-center article and section it came from; click it to read the exact passage. Escalated questions show the ticket number.
+
+The chat is a single static page (`chat/index.html`) served by nginx (`chat/nginx.conf.template`). nginx forwards questions to the `support-ask` webhook and adds the `X-Webhook-Token` header on the server, so the token never reaches the browser. It also limits each IP to 20 questions per minute and accepts only `POST` on `/api/ask`.
+
+Or call the API directly:
 
 ```bash
 curl -X POST http://localhost:5678/webhook/support-ask \

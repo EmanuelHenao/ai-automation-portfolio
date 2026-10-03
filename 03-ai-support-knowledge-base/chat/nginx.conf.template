@@ -1,0 +1,41 @@
+# Support chat web app: serves the static UI and proxies questions to the n8n workflow.
+# The webhook token is added here, server side, so it never reaches the browser.
+# ${WEBHOOK_TOKEN} is filled from the environment by the nginx image at startup.
+
+limit_req_zone $binary_remote_addr zone=ask:10m rate=20r/m;
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+
+    location = /api/ask {
+        limit_except POST { deny all; }
+        limit_req zone=ask burst=5 nodelay;
+        limit_req_status 429;
+        client_max_body_size 8k;
+
+        proxy_pass http://n8n:5678/webhook/support-ask;
+        proxy_set_header Host $host;
+        proxy_set_header Content-Type application/json;
+        proxy_set_header X-Webhook-Token "${WEBHOOK_TOKEN}";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 90s;
+    }
+
+    # Help-center articles (read-only), used to show the cited section
+    location /kb/ {
+        alias /usr/share/nginx/kb/;
+        default_type text/plain;
+        charset utf-8;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
